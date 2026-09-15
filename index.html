@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>金型まなびラボ | 製造業の金型を体系的に学ぶ</title>
+<meta name="description" content="プレス金型・射出成形金型・ダイカスト・鍛造・砂型・樹脂型・3Dプリンタ型まで。初心者から営業・実務者までが金型を体系的に学べる学習サイト。">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="金型まなびラボ">
+<meta property="og:description" content="製造業の「金型」を体系的に学べる学習サイト">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231d2a38'/%3E%3Cpath d='M6 11h20v3H6zM6 18h20v3H6z' fill='%23f0a500'/%3E%3Cpath d='M13 14h6v4h-6z' fill='%235bc0be'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">本文へスキップ</a>
+
+<header class="site-header">
+  <button class="nav-toggle" id="navToggle" aria-label="メニューを開閉" aria-expanded="false" aria-controls="sidenav">
+    <span></span><span></span><span></span>
+  </button>
+  <a class="brand" href="#/home">
+    <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="7" fill="currentColor" opacity=".12"/>
+      <path d="M6 10h20v4H6z" fill="currentColor"/>
+      <path d="M6 18h20v4H6z" fill="currentColor"/>
+      <path d="M13 14h6v4h-6z" fill="var(--accent)"/>
+    </svg>
+    <span class="brand-text"><b>金型まなびラボ</b><small>Kanagata Learning Lab</small></span>
+  </a>
+  <div class="header-tools">
+    <div class="search-wrap">
+      <input type="search" id="globalSearch" placeholder="用語・トピックを検索（例: 抜き勾配）" aria-label="サイト内検索" autocomplete="off">
+      <div class="search-results" id="searchResults" hidden></div>
+    </div>
+    <button class="icon-btn" id="themeToggle" aria-label="配色を切り替え" title="配色を切り替え">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" fill="currentColor"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidenav" id="sidenav" aria-label="メインナビゲーション"></nav>
+  <div class="scrim" id="scrim" hidden></div>
+  <main class="content" id="main" tabindex="-1"></main>
+</div>
+
+<footer class="site-footer">
+  <p><b>金型まなびラボ</b> — 製造業の金型を体系的に学ぶための学習用サイトです。</p>
+  <p class="disclaimer">掲載の数値（収縮率・クリアランス・型寿命・費用など）はいずれも一般的な<b>目安</b>です。実際の設計・見積では、材料メーカーの技術資料、成形機・プレス機の仕様、社内標準、取引先との仕様書を必ずご確認ください。</p>
+</footer>
+
+<script src="assets/js/figures.js"></script>
+<script src="assets/js/data/molds.js"></script>
+<script src="assets/js/data/molds2.js"></script>
+<script src="assets/js/data/topics.js"></script>
+<script src="assets/js/data/reference.js"></script>
+<script src="assets/js/data/glossary.js"></script>
+<script src="assets/js/data/quiz.js"></script>
+<script src="assets/js/tools.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
