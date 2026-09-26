@@ -10,6 +10,8 @@
     { id: 'types',     label: '金型図鑑',            ico: '📚', group: '深く知る' },
     { id: 'materials', label: '型材・熱処理・表面処理', ico: '🧱', group: '深く知る' },
     { id: 'machining', label: '金型を削る技術',      ico: '⚙️', group: '深く知る' },
+    { id: 'molding',   label: '射出成形のしくみ',    ico: '🎞️', group: '射出成形ラボ' },
+    { id: 'flowsim',   label: '樹脂流動シミュレーター', ico: '🌊', group: '射出成形ラボ' },
     { id: 'cost',      label: 'コスト・見積・納期',  ico: '💴', group: '仕事で使う' },
     { id: 'trouble',   label: '不良とトラブル対応',  ico: '🛠️', group: '仕事で使う' },
     { id: 'tools',     label: '計算ツール',          ico: '🧮', group: '仕事で使う' },
@@ -98,11 +100,13 @@
         types: 'プレス・射出成形・ダイカスト・鍛造・砂型・樹脂型・3Dプリンタ型まで、12種類を横断比較。',
         materials: 'SKD11とSKD61は何が違うのか。鋼種の選び方、熱処理の役割、表面処理で寿命が変わる理由。',
         machining: '切削・放電・研削・磨きの役割分担。なぜ放電加工が必要で、5軸加工が納期を縮めるのか。',
+        molding: '成形機が1サイクルで何をしているかをアニメーションで。スクリューの動き、圧力の波形、噴水流と固化層まで。',
+        flowsim: 'ゲート位置・材料・条件を変えて、ウェルドライン、エアトラップ、ショートショットを自分で確かめる流動解析。',
         cost: '型費の構成比、価格を動かす7つの要因、型償却、引合で必ず聞くべき項目と契約の注意点。',
         trouble: 'ヒケ、バリ、そり、巣、ヒートチェック。症状から原因と対策を引ける一覧表。',
-        tools: '損益分岐点、成形収縮、クリアランス、展開長、型締力、抜き勾配。その場で使える6つの計算。',
-        glossary: '現場で飛び交う用語を124語収録。カテゴリ絞り込みとキーワード検索つき。',
-        quiz: '全58問。カテゴリ別に出題して理解度を確認できます。解説つき。'
+        tools: '損益分岐点、成形収縮、クリアランス、展開長、型締力、冷却時間、抜き勾配。その場で使える' + K.tools.length + 'つの計算。',
+        glossary: '現場で飛び交う用語を' + K.glossary.length + '語収録。カテゴリ絞り込みとキーワード検索つき。',
+        quiz: '全' + K.quiz.length + '問。カテゴリ別に出題して理解度を確認できます。解説つき。'
       }[r.id] || '';
       return '<a class="tile" href="#/' + r.id + '"><h3><span class="tile-ico">' + r.ico + '</span>' + esc(r.label) + '</h3><p>' + esc(desc) + '</p></a>';
     }).join('');
@@ -116,16 +120,16 @@
 
       '<div class="grid cols-4" style="margin-bottom:26px">' +
       '<div class="card" style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)">12</div><div style="font-size:12.5px;color:var(--text-muted)">種類の金型を図鑑で解説</div></div>' +
-      '<div class="card" style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)">124</div><div style="font-size:12.5px;color:var(--text-muted)">語の用語集</div></div>' +
-      '<div class="card" style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)">6</div><div style="font-size:12.5px;color:var(--text-muted)">つの実務計算ツール</div></div>' +
-      '<div class="card" style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)">58</div><div style="font-size:12.5px;color:var(--text-muted)">問のクイズ</div></div>' +
+      '<div class="card" style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)">' + K.glossary.length + '</div><div style="font-size:12.5px;color:var(--text-muted)">語の用語集</div></div>' +
+      '<div class="card" style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)">' + K.tools.length + '</div><div style="font-size:12.5px;color:var(--text-muted)">つの実務計算ツール</div></div>' +
+      '<div class="card" style="text-align:center"><div style="font-size:28px;font-weight:700;color:var(--accent)">' + K.quiz.length + '</div><div style="font-size:12.5px;color:var(--text-muted)">問のクイズ</div></div>' +
       '</div>' +
 
       '<h2>どこから読むか</h2>' +
       '<div class="grid cols-3" style="margin-bottom:8px">' +
       '<div class="card"><h3 style="margin-top:0">🔰 はじめての方</h3><p style="font-size:13.5px;color:var(--text-muted)">「金型とは何か」→「構造と部品」→「金型ができるまで」の順に読めば、全体像がつかめます。最後にクイズで確認を。</p><div class="btn-row" style="margin-bottom:0"><a class="btn primary" href="#/basics">基礎から始める</a></div></div>' +
       '<div class="card"><h3 style="margin-top:0">💼 営業・非技術職の方</h3><p style="font-size:13.5px;color:var(--text-muted)">「金型とは何か」で工法の使い分けを押さえたら、「コスト・見積・納期」へ。引合で聞くべき項目の一覧が使えます。</p><div class="btn-row" style="margin-bottom:0"><a class="btn" href="#/cost">見積の話から</a></div></div>' +
-      '<div class="card"><h3 style="margin-top:0">🔧 技術者・実務者の方</h3><p style="font-size:13.5px;color:var(--text-muted)">「金型図鑑」で各工法の設計要点を横断し、「型材」「加工技術」「トラブル対応」へ。計算ツールは日常業務でどうぞ。</p><div class="btn-row" style="margin-bottom:0"><a class="btn" href="#/types">図鑑を見る</a></div></div>' +
+      '<div class="card"><h3 style="margin-top:0">🔧 技術者・実務者の方</h3><p style="font-size:13.5px;color:var(--text-muted)">「金型図鑑」で各工法の設計要点を横断し、「型材」「加工技術」「トラブル対応」へ。射出成形は「樹脂流動シミュレーター」で条件を動かして確かめられます。</p><div class="btn-row" style="margin-bottom:0"><a class="btn" href="#/types">図鑑を見る</a><a class="btn" href="#/flowsim">シミュレーター</a></div></div>' +
       '</div>' +
 
       '<h2>すべてのコンテンツ</h2>' +
@@ -234,6 +238,9 @@
       '<h1>' + m.icon + ' ' + esc(m.name) + '</h1>' +
       '<p class="lead">' + esc(m.oneLine) + '</p></div>' +
       '<div class="note"><span class="note-title">代表的な製品</span>' + esc(m.products) + '</div>' +
+      (m.id === 'injection' ? '<div class="grid cols-2" style="margin:14px 0 4px">' +
+        '<a class="tile" href="#/molding"><h3><span class="tile-ico">🎞️</span>射出成形のしくみ</h3><p>成形機の1サイクル、圧力波形、噴水流と固化層をアニメーションで。</p></a>' +
+        '<a class="tile" href="#/flowsim"><h3><span class="tile-ico">🌊</span>樹脂流動シミュレーター</h3><p>ゲート位置や条件を変えて、ウェルドライン・エアトラップ・ショートを確かめる。</p></a></div>' : '') +
       '<h2>しくみと設計の考え方</h2>' + expand(m.summary) +
       (m.svg ? expand('[[fig:' + m.svg + ']]') : '') +
       '<h2>主な構成部品</h2>' + structure +
@@ -250,7 +257,7 @@
   function renderTools() {
     main.innerHTML =
       '<div class="page-head"><span class="eyebrow">STEP 8 ｜ ツール</span><h1>計算ツール</h1>' +
-      '<p class="lead">実務でよく使う6つの計算をブラウザ上で。入力するとその場で結果が更新されます。いずれも一般的な目安式であり、最終判断は社内標準や実測値に基づいて行ってください。</p></div>' +
+      '<p class="lead">実務でよく使う' + K.tools.length + 'つの計算をブラウザ上で。入力するとその場で結果が更新されます。いずれも一般的な目安式であり、最終判断は社内標準や実測値に基づいて行ってください。</p></div>' +
       '<div id="toolList"></div>' + pager('tools');
     var host = document.getElementById('toolList');
     K.tools.forEach(function (t) {
@@ -404,9 +411,13 @@
   /* ------------------------------ 検索 ------------------------------ */
   var searchIndex = [];
   function buildSearchIndex() {
+    var extra = {
+      molding: '射出成形機 スクリュー 保圧 V/P切替 計量 背圧 冷却時間 ファウンテンフロー 固化層 アニメーション',
+      flowsim: '流動解析 CAE シミュレーション ウェルドライン エアトラップ ショートショット ゲート ランナーバランス スパイラルフロー 成形ウィンドウ'
+    };
     ROUTES.forEach(function (r) {
       var t = K.topics[r.id];
-      searchIndex.push({ kind: 'ページ', title: r.label, sub: t ? t.lead : '', href: '#/' + r.id, text: r.label + ' ' + (t ? t.lead + ' ' + (t.toc || []).join(' ') : '') });
+      searchIndex.push({ kind: 'ページ', title: r.label, sub: t ? t.lead : (extra[r.id] || ''), href: '#/' + r.id, text: r.label + ' ' + (t ? t.lead + ' ' + (t.toc || []).join(' ') : '') + ' ' + (extra[r.id] || '') });
     });
     K.molds.forEach(function (m) {
       searchIndex.push({ kind: '金型図鑑', title: m.name, sub: m.oneLine, href: '#/types/' + m.id, text: m.name + ' ' + m.en + ' ' + m.oneLine + ' ' + m.products });
@@ -459,6 +470,7 @@
       var next = isDark ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
       try { localStorage.setItem('kanagata-theme', next); } catch (e) { }
+      document.dispatchEvent(new CustomEvent('kanagata:theme'));
     });
   }
 
@@ -492,7 +504,10 @@
     var parts = raw.split('/').filter(Boolean);
     var page = parts[0] || 'home';
 
-    if (page === 'types') {
+    if (typeof K.pageCleanup === 'function') { try { K.pageCleanup(); } catch (e) { } K.pageCleanup = null; }
+    if (page === 'flowsim' && K.renderFlowSim) { K.renderFlowSim(main); }
+    else if (page === 'molding' && K.renderMolding) { K.renderMolding(main); }
+    else if (page === 'types') {
       if (parts[1]) renderMold(parts[1]); else renderTypes();
     } else if (page === 'tools') { renderTools(); }
     else if (page === 'glossary') { renderGlossary(); }

@@ -216,6 +216,51 @@
       }
     },
 
+    /* ---------------- 冷却時間 ---------------- */
+    {
+      id: 'cooling',
+      title: '射出成形：冷却時間の目安',
+      desc: '製品の中心温度が取出し温度まで下がる時間を、平板の熱伝導の式で求めます。サイクルタイムの大半を占める冷却時間が、肉厚の2乗に比例することを確かめられます。',
+      render: function (root) {
+        var box = el('div', { class: 'tool' });
+        var mats = K.materials || [];
+        var sel = field(box, 'ct-mat', '樹脂', '熱拡散率と標準温度を自動セット', null, { options: mats.map(function (m, i) { return [m.name + '（' + m.full + '）', i]; }), selected: 0 });
+        var th = field(box, 'ct-h', '肉厚 h', '最も厚い部分（mm）', 2.0);
+        var tm = field(box, 'ct-tm', '樹脂温度 Tm', '（℃）', mats.length ? mats[0].Tm : 230);
+        var tw = field(box, 'ct-tw', '金型温度 Tw', '（℃）', mats.length ? mats[0].Tw : 40);
+        var te = field(box, 'ct-te', '取出し温度 Te', '突き出しで変形しない温度（℃）', mats.length ? mats[0].Teject : 95);
+        var out = el('div', { class: 'tool-out' });
+        box.appendChild(out);
+        function tc(hmm, a, Tm, Tw, Te) {
+          var h = hmm * 1e-3, r = 8 / (Math.PI * Math.PI) * (Tm - Tw) / (Te - Tw);
+          return r > 1 ? h * h / (Math.PI * Math.PI * a) * Math.log(r) : 0;
+        }
+        function calc() {
+          var m = mats[parseInt(sel.value, 10)] || { alpha: 8e-8 };
+          var H = num(th.value, 2), Tm = num(tm.value, 230), Tw = num(tw.value, 40), Te = num(te.value, 95);
+          if (!(Te > Tw && Tm > Te)) { out.innerHTML = '<span class="sub">温度は 金型温度 ＜ 取出し温度 ＜ 樹脂温度 となるように入力してください。</span>'; return; }
+          var t = tc(H, m.alpha, Tm, Tw, Te);
+          var rows = [0.5, 1, 1.5, 2].map(function (k) {
+            return '<tr><td class="num">' + fmt(H * k, 2) + ' mm</td><td class="num">' + fmt(tc(H * k, m.alpha, Tm, Tw, Te), 1) + ' 秒</td></tr>';
+          }).join('');
+          out.innerHTML =
+            '<span class="big">' + fmt(t, 1) + ' 秒</span>' +
+            '<span class="sub">熱拡散率 α = ' + (m.alpha * 1e8).toFixed(1) + '×10⁻⁸ m²/s で計算。金型温度を10℃下げると ' + fmt(tc(H, m.alpha, Tm, Tw - 10, Te), 1) + ' 秒、取出し温度を10℃上げられれば ' + fmt(tc(H, m.alpha, Tm, Tw, Te + 10), 1) + ' 秒になります。</span>' +
+            '<div class="table-wrap" style="margin-top:12px"><table><thead><tr><th class="num">肉厚</th><th class="num">冷却時間</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+            '<span class="sub">計算式：<code>t = h²/(π²α) × ln{(8/π²)(Tm−Tw)/(Te−Tw)}</code>。肉厚が2倍になると冷却時間は約4倍です。</span>' +
+            '<span class="sub">※ 平板・両面冷却・金型表面温度一定の理想条件です。リブの根元やボスなど局所的な厚肉部、冷却回路から遠い部分は、これより長くかかります。</span>';
+        }
+        sel.addEventListener('change', function () {
+          var m = mats[parseInt(sel.value, 10)];
+          if (m) { tm.value = m.Tm; tw.value = m.Tw; te.value = m.Teject; }
+          calc();
+        });
+        [th, tm, tw, te].forEach(function (i) { i.addEventListener('input', calc); });
+        calc();
+        root.appendChild(box);
+      }
+    },
+
     /* ---------------- 6. 抜き勾配とシボ ---------------- */
     {
       id: 'draft',
