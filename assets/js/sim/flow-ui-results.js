@@ -224,15 +224,20 @@
     U.setR(null);
   }
 
-  function loadExercise(id) {
+  /* 演習の条件（モデル・材料・表示）を状態に読み込む */
+  function prepareExercise(id) {
     var ex = U.EXERCISES.filter(function (e) { return e.id === id; })[0];
-    if (!ex) return;
+    if (!ex) return false;
     S.modelId = ex.model;
     if (ex.id === 'spiral') S.matId = 'PP';
     if (ex.id === 'window') S.matId = 'PP';
     U.applyModelDefaults(false);
     U.applyMaterialDefaults();
     S.view = 'fill'; S.mode = ex.id === 'trap' ? 'vent' : 'move';
+    return true;
+  }
+  function loadExercise(id) {
+    if (!prepareExercise(id)) return;
     onModelChanged();
     $('fsWrap').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
@@ -316,9 +321,10 @@
     R.mq.addEventListener('change', R.onTheme);
   }
 
-  K.renderFlowSim = function (main) {
+  /* exId を渡すと、その演習を読み込んだ状態で開く（例：#/flowsim/weld） */
+  K.renderFlowSim = function (main, exId) {
     teardown();
-    if (S.gates == null) { U.applyModelDefaults(false); U.applyMaterialDefaults(); }
+    if (!(exId && prepareExercise(exId)) && S.gates == null) { U.applyModelDefaults(false); U.applyMaterialDefaults(); }
     U.setR({ t: 0 });
     main.innerHTML = U.template();
     U.init3D();

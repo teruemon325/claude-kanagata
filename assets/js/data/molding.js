@@ -107,7 +107,7 @@
     '<div class="grid cols-3">' +
     '<a class="tile" href="#/flowsim"><h3><span class="tile-ico">🌊</span>樹脂流動シミュレーター</h3><p>ゲート位置・材料・条件を変えて、ウェルドライン、エアトラップ、ショートショットを3D表示と断面図で確かめる。</p></a>' +
     '<a class="tile" href="#/types/injection"><h3><span class="tile-ico">💧</span>射出成形金型（図鑑）</h3><p>金型の構造・ゲートの種類・不良と対策の一覧。</p></a>' +
-    '<a class="tile" href="#/trouble"><h3><span class="tile-ico">🛠️</span>不良とトラブル対応</h3><p>ヒケ・ショート・バリ・そり・焼けの原因と対策。</p></a></div>';
+    '<a class="tile" href="#/trouble"><h3><span class="tile-ico">🛠️</span>不良とトラブル対応</h3><p>ヒケ・ショート・バリ・そり・焼けの見た目と原因・対策をイラストで。</p></a></div>';
   }
 
   function viscChart(host) {

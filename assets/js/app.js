@@ -71,7 +71,12 @@
   }
 
   function expand(html) {
-    return html
+    // 不良の図解：矢印やハッチングの共通定義をページに 1 回だけ置く
+    var dx = K.defects && /\[\[(defects|dfig|defect-index)/.test(html) ? K.defects.defs() : '';
+    return dx + html
+      .replace(/\[\[defect-index\]\]/g, function () { return K.defects.index(); })
+      .replace(/\[\[defects:([a-z]+)\]\]/g, function (_, g) { return K.defects.gallery(g); })
+      .replace(/\[\[dfig:([a-z]+)\]\]/g, function (_, n) { return K.defects.figure(n); })
       .replace(/\[\[fig:([a-zA-Z]+)\]\]/g, function (_, n) { return figure(n); })
       .replace(/\[\[table:trouble-injection\]\]/g, function () { return troubleTable(['injection']); })
       .replace(/\[\[table:trouble-press\]\]/g, function () { return troubleTable(['press']); })
@@ -103,7 +108,7 @@
         molding: '成形機が1サイクルで何をしているかをアニメーションで。スクリューの動き、圧力の波形、噴水流と固化層まで。',
         flowsim: 'ゲート位置・材料・条件を変えて、ウェルドライン、エアトラップ、ショートショットを自分で確かめる流動解析。',
         cost: '型費の構成比、価格を動かす7つの要因、型償却、引合で必ず聞くべき項目と契約の注意点。',
-        trouble: 'ヒケ、バリ、そり、巣、ヒートチェック。症状から原因と対策を引ける一覧表。',
+        trouble: 'ヒケ、バリ、そり、巣、ヒートチェックなど30の不良を、見た目としくみのイラストで。症状から原因と対策を引ける。',
         tools: '損益分岐点、成形収縮、クリアランス、展開長、型締力、冷却時間、抜き勾配。その場で使える' + K.tools.length + 'つの計算。',
         glossary: '現場で飛び交う用語を' + K.glossary.length + '語収録。カテゴリ絞り込みとキーワード検索つき。',
         quiz: '全' + K.quiz.length + '問。カテゴリ別に出題して理解度を確認できます。解説つき。'
@@ -263,6 +268,7 @@
     K.tools.forEach(function (t) {
       var sec = document.createElement('section');
       sec.className = 'card';
+      sec.id = 'tool-' + t.id;             // 他のページから #/tools#tool-clamp のように直接開ける
       sec.style.marginBottom = '20px';
       sec.innerHTML = '<h3 style="margin-top:0">' + esc(t.title) + '</h3><p style="font-size:13.5px;color:var(--text-muted)">' + esc(t.desc) + '</p>';
       t.render(sec);
@@ -505,7 +511,7 @@
     var page = parts[0] || 'home';
 
     if (typeof K.pageCleanup === 'function') { try { K.pageCleanup(); } catch (e) { } K.pageCleanup = null; }
-    if (page === 'flowsim' && K.renderFlowSim) { K.renderFlowSim(main); }
+    if (page === 'flowsim' && K.renderFlowSim) { K.renderFlowSim(main, parts[1]); }
     else if (page === 'molding' && K.renderMolding) { K.renderMolding(main); }
     else if (page === 'types') {
       if (parts[1]) renderMold(parts[1]); else renderTypes();
