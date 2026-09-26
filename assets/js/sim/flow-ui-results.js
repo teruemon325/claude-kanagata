@@ -200,7 +200,7 @@
       return '<tr><td><b>' + m.name + '</b></td><td class="num">' + m.n.toFixed(2) + '</td><td class="num">' + fmt(m.tau / 1000, 0) + '</td><td class="num">' + fmt(K.rheology.viscosity(m, m.Tm, 1000), 0) + '</td><td class="num">' + m.Tnf + '</td><td class="num">' + m.TmRange[0] + '〜' + m.TmRange[1] + '</td><td class="num">' + m.TwRange[0] + '〜' + m.TwRange[1] + '</td></tr>';
     }).join('');
     return '<section class="fs-section fs-method"><h2>このシミュレーターの中身</h2>' +
-      '<p>市販の流動解析ソフトの「2.5D（中立面）解析」と同じ枠組みを、学習用に簡潔にしたものです。製品を平面形状＋肉厚分布として扱い、各時刻でキャビティ内の圧力分布を解いて、流動先端を少しずつ前進させます。</p>' +
+      '<p>市販の流動解析ソフトの「2.5D（中立面）解析」と同じ枠組みを、学習用に簡潔にしたものです。製品を平面形状＋肉厚分布として扱い、各時刻でキャビティ内の圧力分布を解いて、流動先端を少しずつ前進させます。画面の3D図と断面図は、この平面形状と肉厚分布から立体を組み立てて描いたもので、厚み方向は見やすいように拡大しています（倍率は図中に表示）。</p>' +
       '<div class="grid cols-2">' +
       '<div class="card"><h3>1. 流れ：Hele-Shaw 近似</h3><p>肉厚が流動長に比べて十分薄い流れでは、厚さ方向に平均した流量が圧力勾配に比例します。</p><p class="fs-eq">q = −(h<sub>m</sub>³ / 12η) ∇p</p><p>溶融層の厚さ h<sub>m</sub> が<b>3乗</b>で効くため、肉厚が半分になると流れやすさは1/8。厚い部分を先回りする「レーストラッキング」や、薄い部分の「ためらい」はこの式から生まれます。</p></div>' +
       '<div class="card"><h3>2. 粘度：Cross-WLF モデル</h3><p>樹脂の粘度は、速く流すほど下がり（せん断流動化）、温度が下がると急上昇します。</p><p class="fs-eq">η = η₀(T) / (1 + (η₀ γ̇ / τ*)<sup>1−n</sup>)</p><p>η₀(T) は WLF 式で温度に依存。壁面せん断速度には Rabinowitsch 補正をかけています。</p></div>' +
@@ -217,6 +217,7 @@
     var R = U.getR();
     if (!R) return;
     cancelAnimationFrame(R.raf); cancelAnimationFrame(R.playRaf); cancelAnimationFrame(R.sweepRaf);
+    U.teardownViews();
     window.removeEventListener('resize', R.onResize);
     document.removeEventListener('kanagata:theme', R.onTheme);
     if (R.mq) R.mq.removeEventListener('change', R.onTheme);
@@ -239,7 +240,8 @@
   function onModelChanged() {
     var R = U.getR();
     U.stopPlay();
-    R.pm = null; R.sim = null; R.res = null; R.iso = null; R.legendKey = null;
+    R.pm = null; R.sim = null; R.res = null; R.iso = null; R.legendKey = null; R.cut = null; R.probe = null; R.probeK = null;
+    $('fsTip').hidden = true; $('fsCutTip').hidden = true;
     $('fsResults').innerHTML = '';
     $('fsSweepOut').innerHTML = ''; $('fsSweepStatus').textContent = '';
     U.syncControls();
@@ -295,8 +297,18 @@
     Array.prototype.forEach.call(document.querySelectorAll('.fs-ex'), function (b) {
       b.addEventListener('click', function () { loadExercise(b.getAttribute('data-ex')); });
     });
-    var rt = 0;
-    R.onResize = function () { clearTimeout(rt); rt = setTimeout(function () { if (!U.getR()) return; U.setupCanvas(); U.draw(); }, 150); };
+    U.bindViews();
+    var rt = 0, lastW = 0;
+    // 幅が変わったときだけ描き直す（スマートフォンでアドレスバーが出入りする高さの変化は無視）
+    R.onResize = function () {
+      clearTimeout(rt);
+      rt = setTimeout(function () {
+        if (!U.getR()) return;
+        var w = $('fsWrap').clientWidth;
+        if (w === lastW) return;
+        lastW = w; U.setupCanvas(); U.draw();
+      }, 150);
+    };
     window.addEventListener('resize', R.onResize);
     R.onTheme = function () { var r = U.getR(); if (!r) return; r.legendKey = null; U.draw(); };
     document.addEventListener('kanagata:theme', R.onTheme);
@@ -309,6 +321,7 @@
     if (S.gates == null) { U.applyModelDefaults(false); U.applyMaterialDefaults(); }
     U.setR({ t: 0 });
     main.innerHTML = U.template();
+    U.init3D();
     bind();
     U.syncControls();
     U.setupCanvas();

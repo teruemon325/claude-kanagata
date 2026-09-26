@@ -240,7 +240,7 @@
       '<div class="note"><span class="note-title">代表的な製品</span>' + esc(m.products) + '</div>' +
       (m.id === 'injection' ? '<div class="grid cols-2" style="margin:14px 0 4px">' +
         '<a class="tile" href="#/molding"><h3><span class="tile-ico">🎞️</span>射出成形のしくみ</h3><p>成形機の1サイクル、圧力波形、噴水流と固化層をアニメーションで。</p></a>' +
-        '<a class="tile" href="#/flowsim"><h3><span class="tile-ico">🌊</span>樹脂流動シミュレーター</h3><p>ゲート位置や条件を変えて、ウェルドライン・エアトラップ・ショートを確かめる。</p></a></div>' : '') +
+        '<a class="tile" href="#/flowsim"><h3><span class="tile-ico">🌊</span>樹脂流動シミュレーター</h3><p>ゲート位置や条件を変えて、ウェルドライン・エアトラップ・ショートを3D表示と断面図で確かめる。</p></a></div>' : '') +
       '<h2>しくみと設計の考え方</h2>' + expand(m.summary) +
       (m.svg ? expand('[[fig:' + m.svg + ']]') : '') +
       '<h2>主な構成部品</h2>' + structure +

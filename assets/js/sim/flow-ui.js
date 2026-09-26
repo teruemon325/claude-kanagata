@@ -6,7 +6,8 @@
   var S = {
     modelId: 'holes', matId: 'PP', Tm: null, Tw: null, fillTime: null, Pmax: 150, vp: 98,
     gates: null, vents: [], plVent: true,
-    view: 'fill', iso: true, weld: true, trap: true, mode: 'move', speed: 4
+    view: 'fill', iso: true, weld: true, trap: true, mode: 'move', speed: 4,
+    stage: '3d', cam: 'oblique', exag: 4, cutDir: 'x', cutPos: 40      // 図の種類（3D／平面図）・視点・厚みの誇張・断面の位置
   };
   var R = null;             // 実行時オブジェクト（ページ離脱で破棄）
   var gridCache = {};
@@ -48,7 +49,12 @@
   function mat() { return K.materialById(S.matId); }
   function grid() {
     var m = model();
-    if (!gridCache[m.id]) gridCache[m.id] = K.rasterizeModel(m);
+    if (!gridCache[m.id]) {
+      var g = K.rasterizeModel(m), tmin = Infinity, tmax = 0;
+      for (var k = 0; k < g.h.length; k++) if (g.h[k] > 0) { tmin = Math.min(tmin, g.h[k] * 1e3); tmax = Math.max(tmax, g.h[k] * 1e3); }
+      g.tmin = tmin; g.tmax = tmax;
+      gridCache[m.id] = g;
+    }
     return gridCache[m.id];
   }
   function mmToCell(g, p) { return K.cellAt(g, p[0], p[1], 4); }
@@ -75,7 +81,9 @@
       '<label><input type="checkbox" id="fsIso" checked> 等時間線</label>' +
       '<label><input type="checkbox" id="fsWeld" checked> ウェルド</label>' +
       '<label><input type="checkbox" id="fsTrap" checked> エアトラップ</label></div></div>' +
-      '<div class="fs-canvas-wrap" id="fsWrap"><canvas id="fsCanvas" tabindex="0" aria-label="解析結果の図。矢印キーではなくクリックでゲートを配置します"></canvas>' +
+      K._flowUI.stageBar() +
+      '<div class="fs-canvas-wrap" id="fsWrap"><canvas id="fsCanvas" tabindex="0" aria-label="解析結果の平面図。クリックでゲートを配置します"></canvas>' +
+      K._flowUI.stage3D() +
       '<div class="fs-tip" id="fsTip" hidden></div>' +
       '<div class="fs-busy" id="fsBusy" hidden><span class="fs-spin" aria-hidden="true"></span><span id="fsBusyText">解析中</span></div></div>' +
       '<div class="fs-legend" id="fsLegend"></div>' +
@@ -86,6 +94,7 @@
       '<select id="fsSpeed" aria-label="再生速度"><option value="8">ゆっくり</option><option value="4" selected>標準</option><option value="2">速い</option></select>' +
       '</div>' +
       '<p class="fs-hint" id="fsHint"></p>' +
+      K._flowUI.cutPanel() +
       '</div>' +
 
       '<aside class="fs-panel" aria-label="解析条件">' +
@@ -129,6 +138,8 @@
     S.fillTime = m.fillTime;
     S.Pmax = m.defaultPmax || 150;
     S.vp = m.pressureTest ? 100 : 98;
+    var sec = m.section || ['x', m.size[1] / 2];
+    S.cutDir = sec[0]; S.cutPos = sec[1]; S.exag = m.exag || 4;
     if (!keepMaterial || S.Tm == null) { S.Tm = mt.Tm; S.Tw = mt.Tw; }
   }
   function applyMaterialDefaults() { var mt = mat(); S.Tm = mt.Tm; S.Tw = mt.Tw; }
@@ -155,12 +166,13 @@
     });
     $('fsPL').checked = S.plVent;
     $('fsIso').checked = S.iso; $('fsWeld').checked = S.weld; $('fsTrap').checked = S.trap;
-    $('fsHint').textContent = {
+    $('fsHint').dataset.base = {
       move: 'キャビティ（製品部）をクリックすると、そこへゲートを移動して再解析します。',
       add: 'クリックでゲートを追加します（最大3点）。複数のゲートは同じ圧力の溶融樹脂でつながっている（ホットランナー相当）とみなします。',
       vent: 'クリックでベント（空気の逃げ道）を追加し、もう一度クリックすると取り除きます。エアトラップの位置に置いてみましょう。'
     }[S.mode];
     $('fsSweepSec').hidden = !!m.pressureTest;
+    K._flowUI.syncViews();
   }
   function setSlider(id, val, min, max, step, show) {
     var el = $(id);
@@ -171,6 +183,13 @@
 
   /* ---------------- キャンバス ---------------- */
   function setupCanvas() {
+    var is3 = S.stage === '3d' && !!R.v3;
+    $('fsCanvas').hidden = is3; $('fs3d').hidden = !is3;
+    $('fsWrap').classList.toggle('is-3d', is3);
+    if (is3) K._flowUI.setup3D(); else setup2D();
+    K._flowUI.setupCut();
+  }
+  function setup2D() {
     var g = grid(), wrap = $('fsWrap'), cvs = $('fsCanvas');
     var maxW = wrap.clientWidth || 600;
     var aspect = g.ny / g.nx;
@@ -208,9 +227,7 @@
     }
     var off = document.createElement('canvas'); off.width = W; off.height = H;
     var octx = off.getContext('2d');
-    var tmin = Infinity, tmax = 0;
-    for (var k = 0; k < g.h.length; k++) if (g.h[k] > 0) { tmin = Math.min(tmin, g.h[k] * 1e3); tmax = Math.max(tmax, g.h[k] * 1e3); }
-    R.pm = { S: Sx, W: W, H: H, mask: mask, edge: edge, c00: c00, fx: fx, fy: fy, th: th, off: off, octx: octx, img: octx.createImageData(W, H), model: m.id, tmin: tmin, tmax: tmax };
+    R.pm = { S: Sx, W: W, H: H, mask: mask, edge: edge, c00: c00, fx: fx, fy: fy, th: th, off: off, octx: octx, img: octx.createImageData(W, H), model: m.id };
   }
 
   /* 時刻 t における各セルの値（表示用）を用意 */
@@ -268,12 +285,21 @@
       }
       return [0, R.fzMax];
     }
-    return [R.pm.tmin, R.pm.tmax];
+    var g = grid();
+    return [g.tmin, g.tmax];
   }
 
+  /* 表示中の図（3D か平面図）と断面図を描き直す */
   function draw() {
-    if (!R || !R.pm) return;
-    var g = grid(), pm = R.pm, img = pm.img.data, dark = isDark();
+    if (!R) return;
+    var dark = isDark(), vr;
+    if (S.stage === '3d' && R.v3) vr = K._flowUI.draw3D(dark);
+    else if (R.pm) vr = draw2D(dark);
+    if (vr) drawLegend(dark, vr);
+    K._flowUI.drawCut(dark);
+  }
+  function draw2D(dark) {
+    var g = grid(), pm = R.pm, img = pm.img.data;
     var t = R.t, cf = cellFields(t), view = S.view;
     var vr = viewRange(), v0 = vr[0], span = vr[1] - vr[0] || 1;
     var lut = K.colormap.ramp(VIEWS.filter(function (x) { return x.id === view; })[0].ramp, dark).lut;
@@ -318,12 +344,13 @@
     ctx.drawImage(pm.off, 0, 0, ctx.canvas.width, ctx.canvas.height);
     ctx.setTransform(R.dpr, 0, 0, R.dpr, 0, 0);
     drawOverlays(ctx, dark);
-    drawLegend(dark, vr);
+    return vr;
   }
 
   function drawOverlays(ctx, dark) {
     var g = grid(), sc = R.scale, sim = R.sim, t = R.t, done = sim && sim.done;
     var ink = dark ? 'rgba(236,241,247,' : 'rgba(18,26,36,';
+    function toPx(mm) { return [(mm[0] + g.margin) / g.cellMM * sc, (mm[1] + g.margin) / g.cellMM * sc]; }
     // 等時間線
     if (S.iso && done && R.iso && S.view !== 'thickness') {
       ctx.lineWidth = 1; ctx.strokeStyle = ink + (S.view === 'fill' ? '0.45)' : '0.28)');
@@ -363,6 +390,8 @@
         ctx.fillText('!', x, y + 0.5);
       });
     }
+    // 断面線 A–A
+    K._flowUI.drawCutLine(ctx, dark, toPx);
     // ベント
     S.vents.forEach(function (v) {
       var c = mmToCell(g, v); if (c < 0) return;
@@ -397,6 +426,8 @@
         ctx.fillText(label, bx + 6, by + 10.5);
       }
     }
+    // 断面図でポイントしている位置
+    if (R.probe) K._flowUI.drawProbe(ctx, dark, toPx(R.probe));
   }
 
   function drawLegend(dark, vr) {
@@ -432,6 +463,7 @@
       for (var dj = -1; dj <= 1; dj++) for (var di = -1; di <= 1; di++, q++) { var bb = cc + dj * nx + di; if (isFinite(raw[bb])) { sum += Wt[q] * raw[bb]; sw += Wt[q]; } }
       tF[cc] = sum / sw;
     }
+    R.tFs = tF;
     var step = K.charts.niceStep(tEnd, 12), levels = [];
     for (var L = step; L < tEnd; L += step) levels.push(L);
     R.isoStep = step;
@@ -468,29 +500,42 @@
       gates: gates, vents: vents, perimeterVents: S.plVent, advance: m.advance
     });
     R.res = null; R.iso = null; R.flowTipCell = -1; R.legendKey = null; R.tfMax = null; R.fzMax = null;
+    R.tFs = null; R.tEnd = null; R.runId = (R.runId || 0) + 1;
     R.t = 0;
     $('fsBusy').hidden = false;
     $('fsRun').disabled = true;
     $('fsPlay').disabled = true; $('fsScrub').disabled = true;
-    var t0 = performance.now(), lastDraw = 0;
-    function tick() {
-      if (!R || !R.sim) return;
-      var sim = R.sim;
+    // 計算は描画のコマ送りと切り離して回す（3D の描画が重い環境でも計算が遅れないように）。
+    // 途中経過の描画は requestAnimationFrame で間引いて行う
+    var sim = R.sim, t0 = performance.now(), lastDraw = 0, ch = new MessageChannel();
+    function compute() {
+      if (!R || R.sim !== sim) return;
       sim.run(24);
       R.t = sim.t;
-      var now = performance.now();
-      if (now - lastDraw > 45 || sim.done) {          // 描画は間引いて計算に時間を回す
-        lastDraw = now;
+      if (!sim.done) { ch.port2.postMessage(0); return; }
+      ch.port1.onmessage = null;
+      cancelAnimationFrame(R.raf); R.raf = 0;
+      R.elapsed = performance.now() - t0;
+      finishRun();
+    }
+    var prev = 0, drew = false, cost = 0;
+    function frame(now) {
+      if (!R || R.sim !== sim || sim.done) return;
+      // 描いたコマの所要時間（次のコマまでの間隔）を見て、重い環境ほど描画の間隔を空ける
+      if (drew && prev) cost = cost ? cost * 0.6 + (now - prev) * 0.4 : now - prev;
+      prev = now; drew = false;
+      if (now - lastDraw > Math.max(S.stage === '3d' ? 60 : 45, cost * 3)) {
+        lastDraw = now; drew = true;
         var fr = sim.hist.filled.length ? sim.hist.filled[sim.hist.filled.length - 1] : 0;
         $('fsBusyText').textContent = '解析中　充填 ' + fmt(fr * 100, 0) + '%　t = ' + fmt(sim.t, 2) + ' s';
         $('fsTime').textContent = fmt(sim.t, 2) + ' s';
         draw();
       }
-      if (!sim.done) { R.raf = requestAnimationFrame(tick); return; }
-      R.elapsed = performance.now() - t0;
-      finishRun();
+      R.raf = requestAnimationFrame(frame);
     }
-    R.raf = requestAnimationFrame(tick);
+    ch.port1.onmessage = compute;
+    ch.port2.postMessage(0);
+    R.raf = requestAnimationFrame(frame);
   }
 
   /* ウェルドの線分群を、主軸方向に並べた滑らかな折れ線にする */
@@ -574,8 +619,13 @@
     var x = (e.clientX - r.left) / r.width * g.nx, y = (e.clientY - r.top) / r.height * g.ny;
     return { u: x, v: y, mm: [x * g.cellMM - g.margin, y * g.cellMM - g.margin], c: Math.floor(y) * g.nx + Math.floor(x) };
   }
-  function onClick(e) {
-    var g = grid(), p = eventCell(e), c = K.cellAt(g, p.mm[0], p.mm[1], 3);
+  /* 3D 図で視線とモデルの交点（mm）が分かっているとき */
+  function pointAt(mm) {
+    var g = grid(), i = Math.floor((mm[0] + g.margin) / g.cellMM), j = Math.floor((mm[1] + g.margin) / g.cellMM);
+    return { mm: mm, c: i >= 0 && j >= 0 && i < g.nx && j < g.ny ? j * g.nx + i : -1 };
+  }
+  function onClick(e, mm) {
+    var g = grid(), p = mm ? pointAt(mm) : eventCell(e), c = K.cellAt(g, p.mm[0], p.mm[1], 3);
     if (c < 0) return;
     var mm = cellToMM(g, c);
     if (S.mode === 'move') S.gates = [mm];
@@ -587,8 +637,8 @@
     }
     startRun();
   }
-  function onHover(e) {
-    var tip = $('fsTip'), g = grid(), p = eventCell(e), c = p.c;
+  function onHover(e, mm) {
+    var tip = $('fsTip'), g = grid(), p = mm ? pointAt(mm) : eventCell(e), c = p.c;
     if (!(c >= 0 && c < g.h.length && g.h[c] > 0)) { tip.hidden = true; return; }
     var sim = R.sim, rows = [['位置', fmt(p.mm[0], 0) + ', ' + fmt(p.mm[1], 0) + ' mm'], ['肉厚', fmt(g.h[c] * 1e3, 1) + ' mm']];
     if (sim) {
@@ -622,5 +672,6 @@
   K._flowUI = { S: S, VIEWS: VIEWS, EXERCISES: EXERCISES, template: template, syncControls: syncControls, setupCanvas: setupCanvas,
     draw: draw, startRun: startRun, togglePlay: togglePlay, stopPlay: stopPlay, setTimeUI: setTimeUI, onClick: onClick, onHover: onHover,
     applyModelDefaults: applyModelDefaults, applyMaterialDefaults: applyMaterialDefaults, getR: function () { return R; }, setR: function (r) { R = r; },
-    model: model, mat: mat, grid: grid, fmt: fmt, esc: esc, $: $, isDark: isDark, cellToMM: cellToMM, mmToCell: mmToCell };
+    model: model, mat: mat, grid: grid, fmt: fmt, esc: esc, $: $, isDark: isDark, cssVar: cssVar, cellToMM: cellToMM, mmToCell: mmToCell,
+    viewRange: viewRange, cavIndex: cavIndex };
 })(window.KANAGATA);

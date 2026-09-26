@@ -1,6 +1,8 @@
 /* 流動解析用の製品モデル（2.5D：平面形状＋肉厚分布）
  * thick(x, y) は mm 単位の座標を受け取り、肉厚 [mm] を返す（0 は金型の鋼材部）。
  * 座標系は左上原点、x 右向き・y 下向き。
+ * section: 断面図の初期位置。['x', 40] は「y = 40 mm の線で、x 方向に切る」、['y', 20] は「x = 20 mm の線で、y 方向に切る」。
+ * exag: 3D 表示で厚み方向を何倍に誇張するかの初期値（省略時 4）。
  */
 (function (root) {
   'use strict';
@@ -43,13 +45,13 @@
     {
       id: 'plate', name: '平板（基本）', size: [120, 80], cell: 1.25,
       desc: '厚さ2.0mmの平板に、短辺中央からゲートで充填します。流動先端が扇状に広がり、ゲートから遠い角が最後に充填されるのが基本形です。',
-      gates: [[1.2, 40]], fillTime: 1.0,
+      gates: [[1.2, 40]], fillTime: 1.0, section: ['x', 40],
       thick: function (x, y) { return inRect(x, y, 0, 0, 120, 80) ? 2.0 : 0; }
     },
     {
       id: 'holes', name: '穴あき平板（ウェルドライン）', size: [120, 80], cell: 1.25,
       desc: '丸穴2つと長穴1つがある平板。流れが穴で分かれ、穴の後ろで再び合流する位置にウェルドラインができます。ゲート位置を動かすと、ウェルドラインの位置と合流時の温度が変わります。',
-      gates: [[1.2, 40]], fillTime: 1.0,
+      gates: [[1.2, 40]], fillTime: 1.0, section: ['x', 24],
       thick: function (x, y) {
         if (!inRect(x, y, 0, 0, 120, 80)) return 0;
         if (inCircle(x, y, 44, 24, 8.5) || inCircle(x, y, 44, 56, 8.5)) return 0;
@@ -60,7 +62,7 @@
     {
       id: 'lid', name: '厚肉リム付きふた（エアトラップ）', size: [120, 90], cell: 1.5,
       desc: '外周に幅8mm・厚さ3.2mmのリム（縁）、中央は厚さ1.2mmの薄いパネル。樹脂は流れやすい厚肉リムを先回りし（レーストラッキング）、薄いパネルを外側から包囲して中央に空気を閉じ込めます。',
-      gates: [[60, 1.2]], fillTime: 1.2,
+      gates: [[60, 1.2]], fillTime: 1.2, section: ['x', 45],
       thick: function (x, y) {
         if (!inRect(x, y, 0, 0, 120, 90)) return 0;
         if (x < 8 || x > 112 || y < 8 || y > 82) return 3.2;
@@ -70,7 +72,7 @@
     {
       id: 'tabs', name: '薄肉ツメ付き（ためらい現象）', size: [110, 72], cell: 1.25,
       desc: '厚さ2.2mmの本体に、厚さ0.6mmの薄いツメが2つ。ゲートに近いツメでは樹脂が入口で立ち止まる「ためらい（ヘジテーション）」が起き、その間に固まって充填不足になりやすくなります。',
-      gates: [[1.0, 25]], fillTime: 1.5,
+      gates: [[1.0, 25]], fillTime: 1.5, section: ['y', 20],
       regions: [['ゲート側のツメ', 14, 50.5, 26, 72], ['奥のツメ', 84, 50.5, 96, 72]],
       thick: function (x, y) {
         if (inRect(x, y, 0, 0, 110, 50)) return 2.2;
@@ -82,21 +84,21 @@
     {
       id: 'runner-fish', name: '4個取り：直列ランナー（アンバランス）', size: [150, 100], cell: 1.0,
       desc: '同じ形の製品4個を1つの型で成形します。スプルー（注入口）が左端にあり、近い2個と遠い2個でランナーの長さが違うため、近い側が先に満ちます。',
-      gates: [[6, 50]], fillTime: 1.4, runner: true,
+      gates: [[6, 50]], fillTime: 1.4, runner: true, section: ['y', 25], exag: 3,
       cavities: [['近い側 上', 8, 6, 42, 32], ['近い側 下', 8, 68, 42, 94], ['遠い側 上', 108, 6, 142, 32], ['遠い側 下', 108, 68, 142, 94]],
       thick: function (x, y) { return runnerThick(x, y, false); }
     },
     {
       id: 'runner-h', name: '4個取り：H型ランナー（バランス）', size: [150, 100], cell: 1.0,
       desc: '製品とゲートは直列ランナーと同じで、スプルーを中央に置いてH型に分岐させたもの。4個までの流動距離が等しいため、同時に充填が完了します。',
-      gates: [[75, 50]], fillTime: 1.4, runner: true,
+      gates: [[75, 50]], fillTime: 1.4, runner: true, section: ['y', 25], exag: 3,
       cavities: [['左上', 8, 6, 42, 32], ['左下', 8, 68, 42, 94], ['右上', 108, 6, 142, 32], ['右下', 108, 68, 142, 94]],
       thick: function (x, y) { return runnerThick(x, y, true); }
     },
     {
       id: 'spiral', name: 'スパイラルフロー試験', size: [132, 132], cell: 1.25,
       desc: '幅5mm・厚さ2.0mmの渦巻き状の長い流路に、一定の圧力で樹脂を押し込みます。樹脂が固まって止まるまでに流れた長さ（流動長）で「材料の流れやすさ」を比較する、材料メーカーの標準的な評価方法です。',
-      gates: [[SP.cx, SP.cy]], fillTime: 0.6, pressureTest: true, defaultPmax: 80, advance: 3,
+      gates: [[SP.cx, SP.cy]], fillTime: 0.6, pressureTest: true, defaultPmax: 80, advance: 3, section: ['x', 66], exag: 2.5,
       thick: function (x, y) { return spiralLocate(x, y) >= 0 ? 2.0 : 0; },
       arc: spiralLocate
     }
